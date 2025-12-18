@@ -1,5 +1,7 @@
 from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
-from dependency_injector.providers import Factory, Object, Singleton
+from dependency_injector.providers import Coroutine, Factory, Object, Resource, Singleton
+
+import aio_pika
 
 from redis.asyncio import Redis as AsyncRedis
 
@@ -7,9 +9,16 @@ from sqlalchemy.engine import URL as DB_URL
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.config import config
+from app.events.bus import EventBus
+from app.services import OrderService, UserService
 from app.storage.models import Base
 from app.storage.repos import OrderRepository, UserRepository
-from app.services import OrderService, UserService
+
+
+async def create_rabbitmq_channel(connection: aio_pika.connection.AbstractConnection):
+    """ Создать канал внутри подключения к RabbitMQ """
+
+    return await connection.channel()
 
 
 class Container(DeclarativeContainer):
@@ -38,10 +47,23 @@ class Container(DeclarativeContainer):
     # Клиент Redis
     redis_client = Singleton(AsyncRedis, host=config.REDIS_HOST, port=config.REDIS_PORT)
 
+    # Подключение к RabbitMQ
+    rabbitmq_connection = Resource(
+        aio_pika.connect,
+        host=config.RABBITMQ_HOST,
+        port=config.RABBITMQ_PORT,
+        login=config.RABBITMQ_USER,
+        password=config.RABBITMQ_PWD
+    )
+    rabbitmq_channel = Coroutine(create_rabbitmq_channel, connection=rabbitmq_connection)
+
     # Репозитории
     user_repo = Factory(UserRepository, session=db_session)
     order_repo = Factory(OrderRepository, session=db_session, redis_client=redis_client)
 
+    # Шина сообщений
+    event_bus = Factory(EventBus, channel=rabbitmq_channel)
+
     # Сервисы
     user_service = Factory(UserService, repo=user_repo)
-    order_service = Factory(OrderService, repo=order_repo)
+    order_service = Factory(OrderService, repo=order_repo, event_bus=event_bus)
