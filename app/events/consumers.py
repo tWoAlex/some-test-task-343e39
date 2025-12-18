@@ -1,8 +1,10 @@
+import asyncio
 from asyncio.exceptions import CancelledError
 
 import aio_pika
 
-from app.events.events import NewOrder  # noqa
+from app.events.events import NewOrder
+from app.celery.main import process_order
 
 
 class NewOrderMessageConsumer:
@@ -19,6 +21,13 @@ class NewOrderMessageConsumer:
                 async with message.process():
                     new_order_message = NewOrder.model_validate_json(message.body)
                     print(f"Found new order with id <{new_order_message.order_data.id}>")
+
+                    loop = asyncio.get_running_loop()
+                    await loop.run_in_executor(
+                        None,
+                        process_order.delay,
+                        new_order_message.order_data.id
+                    )
 
     async def start_consuming(self):
         """ Начать обработку сообщений """
