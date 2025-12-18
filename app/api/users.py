@@ -1,10 +1,10 @@
 from string import ascii_letters, digits, punctuation
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from dependency_injector.wiring import Provide, inject
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.auth import auth, config as auth_config
+from app.auth import auth
 from app.containers import Container
 from app.services import UserService
 
@@ -64,7 +64,6 @@ async def register(
 @inject
 async def login(
     credentials: UserLoginSchema,
-    response: Response,
     user_service: UserService = Depends(Provide[Container.user_service])
 ):
     try:
@@ -79,5 +78,4 @@ async def login(
         )
 
     token = auth.create_access_token(uid=user.id.hex)
-    response.set_cookie(auth_config.JWT_ACCESS_COOKIE_NAME, token)
     return {'access_token': token}

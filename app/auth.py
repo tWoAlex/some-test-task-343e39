@@ -5,9 +5,8 @@ from app.config import config as app_config
 
 config = AuthXConfig()
 config.JWT_ALGORITHM = 'HS256'
-config.JWT_ACCESS_COOKIE_NAME = 'magic_app_cookie'
 config.JWT_SECRET_KEY = app_config.JWT_SECRET_KEY
-config.JWT_TOKEN_LOCATION = ['cookie']
+config.JWT_TOKEN_LOCATION = ['headers']
 
 
 auth = AuthX(config=config)
