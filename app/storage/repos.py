@@ -83,6 +83,7 @@ class OrderRepository:
         key = self.CACHE_ORDER_KEY_TEMPLATE.format(order_id=order_id)
         from_cache = await self._redis.get(key)
         if from_cache is not None:
+            await self._redis.expire(key, config.ORDER_CACHE_TTL)
             return DomainOrder.model_validate_json(from_cache)
 
     async def _cache_probed_earlier(self, order_id: UUID) -> bool:
@@ -107,8 +108,7 @@ class OrderRepository:
         await self._redis.set(
             key,
             order.model_dump_json(),
-            ex=config.ORDER_CACHE_TTL,
-            keepttl=True
+            ex=config.ORDER_CACHE_TTL
         )
 
     async def _remove_from_cache(self, order_id: UUID) -> None:
