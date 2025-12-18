@@ -1,5 +1,7 @@
+import asyncio
 from contextlib import asynccontextmanager
 
+from aio_pika.channel import AbstractChannel
 from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -12,6 +14,7 @@ from app.containers import Container
 
 from app.api.orders import router as orders_router
 from app.api.users import router as users_router
+from app.events.consumers import NewOrderMessageConsumer
 
 
 @asynccontextmanager
@@ -22,6 +25,13 @@ async def lifespan(app: FastAPI):
     # Задаём структуру БД без миграции
     async with container.db_engine().begin() as conn:
         await conn.run_sync(container.db_metadata().create_all)
+
+    # Задаём очередь в RabbitMQ
+    channel: AbstractChannel = await container.rabbitmq_channel()
+    await channel.declare_queue('new_order', durable=True)
+
+    consumer = NewOrderMessageConsumer(channel)
+    asyncio.Task(consumer.start_consuming())
 
     yield
     container.shutdown_resources()
