@@ -14,5 +14,12 @@ class Config(BaseSettings):
     POSTGRES_USERNAME: str
     POSTGRES_PWD: str
 
+    # Реквизиты для подключения к Redis
+    REDIS_HOST: str
+    REDIS_PORT: int
+
+    # Кэш
+    ORDER_CACHE_TTL: int = 300
+
 
 config = Config()
