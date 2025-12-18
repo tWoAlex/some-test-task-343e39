@@ -44,7 +44,8 @@ class UserRepository:
         """ Получить пользователя по email """
 
         query = select(DBUser).where(DBUser.email == email)
-        from_db = await self._session.scalar(query)
+        async with self._session.begin():
+            from_db = await self._session.scalar(query)
         if from_db:
             return self._db_to_domain_model(from_db)
 
