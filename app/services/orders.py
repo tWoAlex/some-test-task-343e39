@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from app.events.bus import EventBus
+from app.events.events import NewOrder as NewOrderEvent
 from app.domain.models import Order as DomainOrder, OrderStatus
 from app.storage.repos import OrderRepository
 
@@ -7,8 +9,9 @@ from app.storage.repos import OrderRepository
 class OrderService:
     """ Сервис управления заказами """
 
-    def __init__(self, repo: OrderRepository):
+    def __init__(self, repo: OrderRepository, event_bus: EventBus):
         self._repo = repo
+        self._event_bus = event_bus
 
     async def create(
         self,
@@ -18,13 +21,17 @@ class OrderService:
     ) -> DomainOrder:
         """ Создать заказ """
 
-        return await self._repo.put(
+        new_order = await self._repo.put(
             DomainOrder(
                 user_id=user_id,
                 items=items,
                 total_price=total_price
             )
         )
+        await self._event_bus.publish(
+            NewOrderEvent(order_data=new_order)
+        )
+        return new_order
 
     async def get(self, order_id: UUID) -> DomainOrder:
         """
