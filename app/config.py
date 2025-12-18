@@ -1,3 +1,4 @@
+from pydantic import HttpUrl
 from pydantic_settings import BaseSettings
 
 
@@ -23,6 +24,9 @@ class Config(BaseSettings):
 
     # Rate limit
     REQUESTS_PER_MINUTE_FOR_IP: int = 5
+
+    # CORS
+    CORS_ALLOWED_ORIGINS: list[HttpUrl]
 
 
 config = Config()

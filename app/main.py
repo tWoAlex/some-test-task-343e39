@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis as AsyncRedis
 
 from app.auth import auth
@@ -31,6 +32,9 @@ auth.handle_errors(app)
 
 app.include_router(users_router)
 app.include_router(orders_router, prefix='/orders')
+
+
+app.add_middleware(CORSMiddleware, allow_origins=config.CORS_ALLOWED_ORIGINS)
 
 
 RATE_LIMIT_KEY_TEMPLATE = 'rate_limit: <{host}>'
