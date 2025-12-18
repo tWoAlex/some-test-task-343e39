@@ -21,5 +21,8 @@ class Config(BaseSettings):
     # Кэш
     ORDER_CACHE_TTL: int = 300
 
+    # Rate limit
+    REQUESTS_PER_MINUTE_FOR_IP: int = 5
+
 
 config = Config()

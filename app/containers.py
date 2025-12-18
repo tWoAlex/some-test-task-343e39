@@ -18,6 +18,7 @@ class Container(DeclarativeContainer):
     wiring_config = WiringConfiguration(modules=(
         'app.api.orders',
         'app.api.users',
+        'app.main',
     ))
 
     # Подключение к БД
