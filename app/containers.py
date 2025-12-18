@@ -1,6 +1,8 @@
 from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
 from dependency_injector.providers import Factory, Object, Singleton
 
+from redis.asyncio import Redis as AsyncRedis
+
 from sqlalchemy.engine import URL as DB_URL
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -32,9 +34,12 @@ class Container(DeclarativeContainer):
     db_engine = Singleton(create_async_engine, url=db_url)
     db_session = Factory(AsyncSession, bind=db_engine, expire_on_commit=False)
 
+    # Клиент Redis
+    redis_client = Singleton(AsyncRedis, host=config.REDIS_HOST, port=config.REDIS_PORT)
+
     # Репозитории
     user_repo = Factory(UserRepository, session=db_session)
-    order_repo = Factory(OrderRepository, session=db_session)
+    order_repo = Factory(OrderRepository, session=db_session, redis_client=redis_client)
 
     # Сервисы
     user_service = Factory(UserService, repo=user_repo)
