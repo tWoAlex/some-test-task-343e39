@@ -6,14 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.config import config
 from app.storage.models import Base
-from app.storage.repos import UserRepository
-from app.services import UserService
+from app.storage.repos import OrderRepository, UserRepository
+from app.services import OrderService, UserService
 
 
 class Container(DeclarativeContainer):
     """ Контейнер с зависимостями """
 
     wiring_config = WiringConfiguration(modules=(
+        'app.api.orders',
         'app.api.users',
     ))
 
@@ -33,6 +34,8 @@ class Container(DeclarativeContainer):
 
     # Репозитории
     user_repo = Factory(UserRepository, session=db_session)
+    order_repo = Factory(OrderRepository, session=db_session)
 
     # Сервисы
     user_service = Factory(UserService, repo=user_repo)
+    order_service = Factory(OrderService, repo=order_repo)
