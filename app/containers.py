@@ -1,3 +1,5 @@
+import asyncio
+
 from dependency_injector.containers import DeclarativeContainer, WiringConfiguration
 from dependency_injector.providers import Coroutine, Factory, Object, Resource, Singleton
 
@@ -15,7 +17,17 @@ from app.storage.models import Base
 from app.storage.repos import OrderRepository, UserRepository
 
 
-async def create_rabbitmq_channel(connection: aio_pika.connection.AbstractConnection):
+async def create_rabbitmq_connection() -> aio_pika.abc.AbstractConnection:
+    await asyncio.sleep(15)
+    return await aio_pika.connect(
+        host=config.RABBITMQ_HOST,
+        port=config.RABBITMQ_PORT,
+        login=config.RABBITMQ_USER,
+        password=config.RABBITMQ_PWD,
+    )
+
+
+async def create_rabbitmq_channel(connection: aio_pika.abc.AbstractConnection):
     """ Создать канал внутри подключения к RabbitMQ """
 
     return await connection.channel()
@@ -36,25 +48,19 @@ class Container(DeclarativeContainer):
         drivername='postgresql+asyncpg',
         host=config.POSTGRES_HOST,
         port=config.POSTGRES_PORT,
-        username=config.POSTGRES_USERNAME,
-        password=config.POSTGRES_PWD,
+        username=config.POSTGRES_USER,
+        password=config.POSTGRES_PASSWORD,
         database=config.POSTGRES_DB_NAME
     )
     db_metadata = Object(Base.metadata)
-    db_engine = Singleton(create_async_engine, url=db_url)
+    db_engine = Resource(create_async_engine, url=db_url)
     db_session = Factory(AsyncSession, bind=db_engine, expire_on_commit=False)
 
     # Клиент Redis
     redis_client = Singleton(AsyncRedis, host=config.REDIS_HOST, port=config.REDIS_PORT)
 
     # Подключение к RabbitMQ
-    rabbitmq_connection = Resource(
-        aio_pika.connect,
-        host=config.RABBITMQ_HOST,
-        port=config.RABBITMQ_PORT,
-        login=config.RABBITMQ_USER,
-        password=config.RABBITMQ_PWD
-    )
+    rabbitmq_connection = Resource(create_rabbitmq_connection)
     rabbitmq_channel = Coroutine(create_rabbitmq_channel, connection=rabbitmq_connection)
 
     # Репозитории

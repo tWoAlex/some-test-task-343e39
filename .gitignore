@@ -11,3 +11,6 @@ wheels/
 
 # Environment variable files
 *.env
+
+# Docker volumes
+data/*

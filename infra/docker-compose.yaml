@@ -1,0 +1,55 @@
+services:
+
+  postgresql:
+    container_name: orderservice-PostgreSQL
+    image: postgres:13.14-alpine
+    hostname: postgres
+    expose:
+      - 5432
+    env_file:
+      - path: ../.env.template
+        required: true
+      - path: ../.env
+        required: false
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data/
+
+  redis:
+    container_name: orderservice-Redis
+    image: redis:8.4-alpine
+    hostname: redis
+    expose:
+      - 6379
+    volumes:
+      - ../data/redis:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+
+  rabbitmq:
+    container_name: orderservice-RabbitMQ
+    image: rabbitmq:3-management-alpine
+    hostname: rabbitmq
+    expose:
+      - 5672
+    ports:
+      - 15672:15672  # Админка RabbitMQ
+    volumes:
+      - ../data/rabbitmq:/var/lib/rabbitmq
+
+  application:
+    depends_on:
+      - postgresql
+      - rabbitmq
+      - redis
+
+    container_name: orderservice-app
+    build:
+      context: ../.
+      dockerfile: app/Dockerfile
+    image: "orderservice-application"
+    env_file:
+      - path: ../.env.template
+        required: true
+      - path: ../.env
+        required: false
+    ports:
+      - 8000:8000
