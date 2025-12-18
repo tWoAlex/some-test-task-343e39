@@ -19,6 +19,12 @@ class Config(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
 
+    # Реквизиты для подключения к RabbitMQ
+    RABBITMQ_USER: str
+    RABBITMQ_PWD: str
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int
+
     # Кэш
     ORDER_CACHE_TTL: int = 300
 
