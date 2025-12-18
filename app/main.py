@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.auth import auth
 from app.containers import Container
 
+from app.api.orders import router as orders_router
 from app.api.users import router as users_router
 
 
@@ -23,4 +24,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 auth.handle_errors(app)
+
 app.include_router(users_router)
+app.include_router(orders_router, prefix='/orders')
