@@ -34,6 +34,11 @@ class UserLoginSchema(UserRegistrationSchema):
     """ Данные для логина """
 
 
+class TokenResponseSchema(BaseModel):
+    access_token: str
+    token_type: str = 'bearer'
+
+
 @router.post(
     path='/register',
     status_code=status.HTTP_201_CREATED,
@@ -77,5 +82,5 @@ async def login(
             detail={'message': "User not found or wrong password"}
         )
 
-    token = auth.create_access_token(uid=user.id.hex)
-    return {'access_token': token}
+    access_token = auth.create_access_token(uid=user.id.hex)
+    return TokenResponseSchema(access_token=access_token)
